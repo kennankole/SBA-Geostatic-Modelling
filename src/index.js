@@ -34,3 +34,37 @@ Export.table.toDrive({
   description: 'clipped_ntl_data',
   fileFormat: 'CSV',
 });
+
+// Digital Elevation Model
+// Load ASTER GDEM data
+var dem = ee.Image('USGS/SRTMGL1_003');
+
+// Extract elevation band from the DEM data
+var elevation = dem.select('elevation');
+
+// Define the region of interest (Kenya)
+var kenya = ee.FeatureCollection('USDOS/LSIB_SIMPLE/2017')
+              .filter(ee.Filter.eq('country_na', 'Kenya'));
+
+// Clip the DEM by the Kenya region
+var clippedDem = elevation.clip(kenya);
+
+// Define visualization parameters
+var visParams = {
+  min: -100,
+  max: 8000,
+  palette: '000000, FFFFFF'
+};
+
+// Add clipped DEM layer to the map
+Map.addLayer(clippedDem, visParams, 'Clipped ASTER GDEM');
+
+// Export the clipped DEM as GeoTIFF
+Export.image.toDrive({
+  image: clippedDem,
+  description: 'aster_dem_clip',
+  scale: 30,
+  maxPixels: 1e12,
+  region: kenya.geometry(),
+  fileFormat: 'GeoTIFF'
+});
